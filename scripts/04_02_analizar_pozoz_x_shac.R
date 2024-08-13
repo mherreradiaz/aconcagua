@@ -250,7 +250,7 @@ for (i in seq_along(semestres)) {
   ggsave(paste0('output/figs/semestre/',sprintf('%02d',i),'_',semestres[i],'.png'), width = 13, height = 7)
 }
 
-# time series por shac
+#### analizar valores de m por shac/estacion ####
 
 estaciones <- c('Verano','Otoño','Invierno','Primavera')
 
@@ -279,16 +279,153 @@ data_estacion <- data_estacion_raw |>
   left_join(data_n) |> 
   mutate(shac = as.factor(shac),
          codigo = as.factor(codigo))
+
+# series temporales
   
+plot_estacion <- list()
+n_min = 15
 
-data_estacion |> 
-  filter(between(año,2000,2022),
-         estacion == estaciones[x],
-         n >= 20,
-         shac==unique(data_completa$shac)[i]) |>  
-  ggplot(aes(año,m,color=codigo,fill=shac)) +
-  geom_line(alpha=.5,linewidth=1) +
-  geom_point(size = 1.5)
+for (x in seq_along(estaciones)) {
   
+  plot_shac <- list()
+  
+  for (i in seq_along(unique(data_estacion$shac))) {
+    
+    data_shac <- data_estacion |> 
+      filter(between(año,2000,2022),
+             estacion == estaciones[x],
+             n >= n_min,
+             shac == unique(data_completa$shac)[i])
+    
+    if (nrow(data_shac) == 0) {
+      plot_shac[[i]] <- ggplot() +
+        labs(title = paste("No data para", unique(data_completa$shac)[i])) +
+        theme_minimal()
+    } else {
+      plot_shac[[i]] <- data_shac |>  
+      ggplot(aes(año,m,color=codigo)) +
+      geom_line(alpha=.5,linewidth=.7) +
+      geom_point(size = 1) +
+      facet_wrap(~shac, strip.position = "right") +
+      theme_minimal() +
+      theme(plot.background = element_rect(fill = "white", color = NA),
+            plot.title = element_text(hjust = 0.5),
+            legend.position = "none")
+    }
+  }
+  
+  (plot_shac[[1]]+plot_shac[[2]]+plot_shac[[3]])/
+    (plot_shac[[4]]+plot_shac[[5]]+plot_shac[[6]])/
+    (plot_shac[[7]]+plot_shac[[8]]+plot_shac[[9]]) +
+    plot_annotation(
+      title = estaciones[x],
+      theme = theme(plot.title = element_text(hjust = 0.5, size = 17)))
+  
+  ggsave(paste0('output/figs/analisis_m/series/',estaciones[x],'.png'), width = 14, height = 9)
+  
+}
 
+# boxplot
 
+plot_estacion <- list()
+n_min = 15
+
+for (x in seq_along(estaciones)) {
+  
+  plot_shac <- list()
+  
+  for (i in seq_along(unique(data_estacion$shac))) {
+    
+    data_shac <- data_estacion |> 
+      filter(between(año,2000,2022),
+             estacion == estaciones[x],
+             n >= n_min,
+             shac == unique(data_completa$shac)[i]) |> 
+      mutate(año = factor(año))
+    
+    if (nrow(data_shac) == 0) {
+      plot_shac[[i]] <- ggplot() +
+        labs(title = paste("No data para", unique(data_completa$shac)[i])) +
+        theme_minimal()
+    } else {
+      plot_shac[[i]] <- data_shac |> 
+        ggplot(aes(x = año, y = m)) +
+        geom_boxplot() +
+        scale_x_discrete(breaks = c("2000", "2005", "2010", "2015", "2020")) +
+        facet_wrap(~shac, strip.position = "right") +
+        theme_minimal() +
+        theme(plot.background = element_rect(fill = "white", color = NA),
+              plot.title = element_text(hjust = 0.5),
+              legend.position = "none")
+    }
+  }
+  
+  (plot_shac[[1]]+plot_shac[[2]]+plot_shac[[3]])/
+    (plot_shac[[4]]+plot_shac[[5]]+plot_shac[[6]])/
+    (plot_shac[[7]]+plot_shac[[8]]+plot_shac[[9]]) +
+    plot_annotation(
+      title = estaciones[x],
+      theme = theme(plot.title = element_text(hjust = 0.5, size = 17)))
+  
+  ggsave(paste0('output/figs/analisis_m/boxplot/',estaciones[x],'.png'), width = 14, height = 9)
+  
+}
+
+# mean y error
+
+plot_estacion <- list()
+n_min <- 15
+
+for (x in seq_along(estaciones)) {
+  
+  plot_shac <- list()
+  
+  for (i in seq_along(unique(data_estacion$shac))) {
+    
+    data_shac <- data_estacion %>%
+      filter(between(año, 2000, 2022),
+             estacion == estaciones[x],
+             n >= n_min,
+             shac == unique(data_completa$shac)[i]) %>%
+      mutate(año = factor(año))
+    
+    if (nrow(data_shac) == 0) {
+      plot_shac[[i]] <- ggplot() +
+        labs(title = paste("No data para", unique(data_completa$shac)[i])) +
+        theme_minimal()
+    } else {
+      summary_stats <- data_shac %>%
+        group_by(año) %>%
+        summarize(
+          mean_m = mean(m, na.rm = TRUE),
+          sd_m = sd(m, na.rm = TRUE),
+          .groups = 'drop'
+        )
+      
+      plot_shac[[i]] <- summary_stats %>%
+        ggplot(aes(x = año, y = mean_m)) +
+        geom_point(size = 1.5) +
+        geom_errorbar(aes(ymin = mean_m - sd_m, ymax = mean_m + sd_m), width = 0.2) +
+        scale_x_discrete(breaks = c("2000", "2005", "2010", "2015", "2020")) +
+        facet_wrap(~unique(data_completa$shac)[i], strip.position = "right") +
+        labs(title = unique(data_completa$shac)[i]) +
+        theme_minimal() +
+        theme(
+          plot.background = element_rect(fill = "white", color = NA),
+          plot.title = element_text(hjust = 0.5),
+          legend.position = "none"
+        )
+    }
+  }
+  
+  combined_plot <- (plot_shac[[1]] + plot_shac[[2]] + plot_shac[[3]]) /
+    (plot_shac[[4]] + plot_shac[[5]] + plot_shac[[6]]) /
+    (plot_shac[[7]] + plot_shac[[8]] + plot_shac[[9]]) +
+    plot_annotation(
+      title = estaciones[x],
+      theme = theme(plot.title = element_text(hjust = 0.5, size = 17))
+    )
+  
+  ggsave(paste0('output/figs/analisis_m/mean_sd/', estaciones[x], '.png'), plot = combined_plot, width = 14, height = 9)
+  
+}
