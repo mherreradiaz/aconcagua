@@ -11,7 +11,7 @@ data <- gw |>
          shac = ID_IDE,
          codigo = Code,
          nombre = Name,
-         mm = `Depth to water (m)`,
+         m = `Depth to water (m)`,
          lon = Longitude_GCS_WGS_1984,
          lat = Latitude_GCS_WGS_1984) |> 
   select(fecha:lat) |> 
@@ -34,7 +34,7 @@ data_completa <- data |>
 
 data_año <- data_completa |> 
   group_by(across(shac:mes)) |> 
-  reframe(n = length(mm[which(!is.na(mm))])) |> 
+  reframe(n = length(m[which(!is.na(m))])) |> 
   group_by(across(shac:año)) |> 
   reframe(n = length(n[which(n > 0)]))
   
@@ -95,7 +95,7 @@ for (i in seq_along(meses)) {
   
   data_mes <- data_completa |>
     group_by(across(shac:mes)) |> 
-    reframe(n = length(mm[which(!is.na(mm))])) |> 
+    reframe(n = length(m[which(!is.na(m))])) |> 
     filter(mes == i) |> 
     mutate(n = as.factor(n))
   
@@ -130,7 +130,7 @@ for (i in seq_along(estaciones)) {
       .before = mes) |> 
     mutate(año = ifelse(mes == 12,año+1,año)) |> 
     group_by(across(shac:estacion)) |> 
-    reframe(n = length(mm[which(!is.na(mm))])) |> 
+    reframe(n = length(m[which(!is.na(m))])) |> 
     filter(estacion == estaciones[i]) |> 
     mutate(n = as.factor(n))
   
@@ -163,7 +163,7 @@ data_shac <- data_completa |>
     .before = mes) |> 
   mutate(año = ifelse(mes == 12,año+1,año)) |> 
   group_by(across(shac:estacion)) |> 
-  reframe(n = length(mm[which(!is.na(mm))])) |> 
+  reframe(n = length(m[which(!is.na(m))])) |> 
   mutate(n = as.numeric(as.character(n))) |> 
   filter(año >= 2001) |>
   mutate(n = ifelse(n>0,1,NA)) |> 
@@ -230,7 +230,7 @@ for (i in seq_along(semestres)) {
       mes %in% c(7:12) ~ "Segundo"), levels=semestres),
       .before = mes) |> 
     group_by(across(shac:semestre)) |> 
-    reframe(n = length(mm[which(!is.na(mm))])) |> 
+    reframe(n = length(m[which(!is.na(m))])) |> 
     filter(semestre == semestres[i]) |> 
     mutate(n = as.factor(n))
   
@@ -249,5 +249,46 @@ for (i in seq_along(semestres)) {
           plot.title = element_text(hjust = 0.5))
   ggsave(paste0('output/figs/semestre/',sprintf('%02d',i),'_',semestres[i],'.png'), width = 13, height = 7)
 }
+
+# time series por shac
+
+estaciones <- c('Verano','Otoño','Invierno','Primavera')
+
+data_estacion_raw <- data |> 
+  mutate(año = year(fecha),
+         mes = month(fecha),
+         estacion = factor(case_when(
+           mes %in% c(12, 1, 2) ~ "Verano",
+           mes %in% c(3, 4, 5) ~ "Otoño",
+           mes %in% c(6, 7, 8) ~ "Invierno",
+           mes %in% c(9, 10, 11) ~ "Primavera"), levels=estaciones),
+         año = ifelse(mes == 12,año+1,año))
+
+data_n <- data_estacion_raw |> 
+  filter(año >= 2001) |>
+  select(-c(fecha,nombre,lon,lat,mes)) |> 
+  distinct(shac,codigo,año,estacion,.keep_all=T) |> 
+  group_by(shac,codigo,estacion) |> 
+  reframe(n = length(m[which(!is.na(m))]))
+
+data_estacion <- data_estacion_raw |>
+  complete(año = min(data_estacion_raw$año):max(data_estacion_raw$año), 
+           nesting(shac, codigo, nombre, estacion), fill = list(m = NA, n = 0)) |> 
+  group_by(shac,codigo,nombre,año,estacion) |> 
+  reframe(m = mean(m,na.rm=T)) |> 
+  left_join(data_n) |> 
+  mutate(shac = as.factor(shac),
+         codigo = as.factor(codigo))
+  
+
+data_estacion |> 
+  filter(between(año,2000,2022),
+         estacion == estaciones[x],
+         n >= 20,
+         shac==unique(data_completa$shac)[i]) |>  
+  ggplot(aes(año,m,color=codigo,fill=shac)) +
+  geom_line(alpha=.5,linewidth=1) +
+  geom_point(size = 1.5)
+  
 
 
