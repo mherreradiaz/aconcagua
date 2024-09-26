@@ -3,10 +3,11 @@ source('script/00_setup.R')
 gw <- read_xlsx('data/raw/tabulada/gw_chile.xlsx') |> 
   filter(Basin == 'RIO ACONCAGUA') |> 
   select(codigo = Code, fecha = Date_String,m = `Depth to water (m)`)
-pozos <- vect('data/processed/espacial/vectorial/pozos_aconcagua.shp') |> 
+pozos <- vect('data/processed/vectorial/pozos_aconcagua.shp') |> 
   values() |>
   rowwise() |> 
-  mutate(codigo = as.numeric(str_split(COD_BNA,'-')[[1]][1])) |> 
+  mutate(codigo = as.numeric(str_split(COD_BNA,'-')[[1]][1]),
+         ID_IDE = gsub('SHAC_','',ID_IDE)) |> 
   rename(nombre = NOMBRE, shac = ID_IDE) |> 
   select(shac,codigo,nombre,lon,lat) |> 
   arrange(codigo)

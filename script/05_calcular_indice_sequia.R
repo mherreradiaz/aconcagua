@@ -64,13 +64,18 @@ for (i in seq_along(periodos)) {
 
     data_sequia |> 
       filter(periodo == periodos[[i]],
-             estacion == estaciones[[x]]) |> 
+             estacion == estaciones[[x]],
+             año >= 2000) |> 
       ggplot(aes(año,di,color = as.factor(nombre))) +
       geom_point(alpha=.5) + 
       geom_line(alpha=.5) +
-      geom_point(data=data_sequia_shac |> filter(periodo == periodos[[i]],estacion == estaciones[[x]]),
+      geom_point(data=data_sequia_shac |> filter(periodo == periodos[[i]],
+                                                 estacion == estaciones[[x]],
+                                                 año >= 2000),
                  aes(año,di_mean,color='MEAN'),color='black') +
-      geom_line(data=data_sequia_shac |> filter(periodo == periodos[[i]],estacion == estaciones[[x]]),
+      geom_line(data=data_sequia_shac |> filter(periodo == periodos[[i]],
+                                                estacion == estaciones[[x]],
+                                                año >= 2000),
                 aes(año,di_mean,color='MEAN'),color='black') +
       facet_wrap(~shac,scales = 'free_x') +
       theme_bw() +
