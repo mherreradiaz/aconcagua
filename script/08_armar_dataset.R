@@ -7,6 +7,8 @@ data_sequia <- read_rds('data/processed/rds/di_shac_seleccion.rds') |>
   select(año,periodo,estacion,shac,cob,di_mean) |> 
   rename(DI = di_mean)
 
+estaciones <- c('Verano','Otoño','Invierno','Primavera')
+
 data_indices <- read_rds('data/processed/rds/indices_satelitales.rds') |> 
   mutate(año = year(fecha),
          mes = month(fecha),
@@ -20,11 +22,10 @@ data_indices <- read_rds('data/processed/rds/indices_satelitales.rds') |>
   reframe(value = mean(value,na.rm=T)) |> 
   pivot_wider(names_from ='index',values_from = 'value')
 
-
 data <- data_sequia |> 
   left_join(data_indices) |> 
   filter(periodo == '1982-2022',
          año >= 2000) |> 
   select(-periodo)
 
-write_rds(data,'data/processed/dataset.rds')
+write_rds(data,'data/processed/rds/dataset.rds')

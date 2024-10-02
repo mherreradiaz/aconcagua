@@ -57,57 +57,20 @@ for (i in seq_along(index_unique)) {
       filter(year(fecha)>=2000,
              index == index_unique[i],
              cob == cob_unique[x]) |> 
-      mutate(value_positive = ifelse(value >= 0,value,NA),
-             value_negative = ifelse(value <= 0,value,NA)) |> 
       ggplot(aes(fecha,value)) +
-      stat_difference(aes(ymin = 0, ymax = value), 
-                      fill = c("red", "blue"),
-                      alpha = 0.8) +
-      geom_line(alpha = .5) +
-      # geom_ribbon(aes(ymin = pmin(value, 0), ymax = pmax(value, 0), fill = value > 0), 
-                  # alpha = 0.8) +
+      geom_link2(aes(colour = after_stat(ifelse(y > 0, '+', '-'))),alpha = .7) +
+      ggh4x::stat_difference(aes(ymin = 0, ymax = value),alpha = .7) +
       facet_wrap(~cob,ncol=1) +
       labs(y = index_unique[i], x = NULL) +
       scale_x_date(date_breaks = '4 years',date_labels = '%Y') +
       facet_wrap(~shac) +
       theme_bw() +
-      theme(strip.background = element_rect(fill='white'))
+      theme(strip.background = element_rect(fill='white'),
+            legend.position = 'none') +
+      scale_fill_manual(values = c('+' = 'firebrick2','-' = 'dodgerblue3')) +
+      scale_color_manual(values = c('+' = 'firebrick2','-' = 'dodgerblue3'))
     
     ggsave(glue::glue('output/fig/index/ts/{cob_unique[x]}/{index_unique[i]}.png'), width = 14, height = 8)
     
   }
 }
-
-  
-data |> 
-  filter(year(fecha) >= 2000,
-         index == index_unique[i],
-         cob == cob_unique[x]) |> 
-  ggplot(aes(fecha, value)) +
-  geom_line(alpha = .5) +
-  # geom_ribbon(aes(ymin = pmin(value, 0), ymax = pmax(value, 0), fill = value > 0), 
-  #             alpha = 0.8) +
-  facet_wrap(~cob, ncol = 1) +
-  labs(y = index_unique[i], x = NULL) +
-  scale_x_date(date_breaks = '4 years', date_labels = '%Y') +
-  facet_wrap(~shac) +
-  theme_bw() +
-  theme(strip.background = element_rect(fill = 'white')) +
-  scale_fill_manual(values = c("TRUE" = "dodgerblue3", "FALSE" = "firebrick2"), guide = "none")
-  
-
-data |> 
-  filter(year(fecha) >= 2000,
-         index == index_unique[i],
-         cob == cob_unique[x]) |> 
-  ggplot(aes(x = fecha)) +
-  stat_difference(aes(ymin = 0, ymax = value), 
-                  fill = c("red", "blue"),
-                  alpha = 0.8) +
-  geom_line(alpha = .5) +
-  facet_wrap(~cob, ncol = 1) +
-  labs(y = index_unique[i], x = NULL) +
-  scale_x_date(date_breaks = '4 years', date_labels = '%Y') +
-  facet_wrap(~shac) +
-  theme_bw() +
-  theme(strip.background = element_rect(fill = 'white'))
