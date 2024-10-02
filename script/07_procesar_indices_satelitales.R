@@ -1,5 +1,6 @@
 source('script/00_setup.R')
 library(tidyterra)
+library(ggh4x)
 
 # indices
 
@@ -56,10 +57,15 @@ for (i in seq_along(index_unique)) {
       filter(year(fecha)>=2000,
              index == index_unique[i],
              cob == cob_unique[x]) |> 
-      ggplot(aes(fecha,value,color=shac,fill=shac)) +
+      mutate(value_positive = ifelse(value >= 0,value,NA),
+             value_negative = ifelse(value <= 0,value,NA)) |> 
+      ggplot(aes(fecha,value)) +
+      stat_difference(aes(ymin = 0, ymax = value), 
+                      fill = c("red", "blue"),
+                      alpha = 0.8) +
       geom_line(alpha = .5) +
-      geom_ribbon(aes(ymin = pmin(value, 0), ymax = pmax(value, 0)), 
-                  alpha = 0.8) +
+      # geom_ribbon(aes(ymin = pmin(value, 0), ymax = pmax(value, 0), fill = value > 0), 
+                  # alpha = 0.8) +
       facet_wrap(~cob,ncol=1) +
       labs(y = index_unique[i], x = NULL) +
       scale_x_date(date_breaks = '4 years',date_labels = '%Y') +
@@ -73,4 +79,35 @@ for (i in seq_along(index_unique)) {
 }
 
   
+data |> 
+  filter(year(fecha) >= 2000,
+         index == index_unique[i],
+         cob == cob_unique[x]) |> 
+  ggplot(aes(fecha, value)) +
+  geom_line(alpha = .5) +
+  # geom_ribbon(aes(ymin = pmin(value, 0), ymax = pmax(value, 0), fill = value > 0), 
+  #             alpha = 0.8) +
+  facet_wrap(~cob, ncol = 1) +
+  labs(y = index_unique[i], x = NULL) +
+  scale_x_date(date_breaks = '4 years', date_labels = '%Y') +
+  facet_wrap(~shac) +
+  theme_bw() +
+  theme(strip.background = element_rect(fill = 'white')) +
+  scale_fill_manual(values = c("TRUE" = "dodgerblue3", "FALSE" = "firebrick2"), guide = "none")
+  
 
+data |> 
+  filter(year(fecha) >= 2000,
+         index == index_unique[i],
+         cob == cob_unique[x]) |> 
+  ggplot(aes(x = fecha)) +
+  stat_difference(aes(ymin = 0, ymax = value), 
+                  fill = c("red", "blue"),
+                  alpha = 0.8) +
+  geom_line(alpha = .5) +
+  facet_wrap(~cob, ncol = 1) +
+  labs(y = index_unique[i], x = NULL) +
+  scale_x_date(date_breaks = '4 years', date_labels = '%Y') +
+  facet_wrap(~shac) +
+  theme_bw() +
+  theme(strip.background = element_rect(fill = 'white'))
