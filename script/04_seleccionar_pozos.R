@@ -23,3 +23,20 @@ data_seleccion <- data |>
   select(año:m,lon,lat)
 
 write_rds(data_seleccion,'data/processed/rds/pozo_seleccion.rds')
+
+# vectorial
+
+data_pozo <- read_rds('data/processed/rds/pozo_seleccion.rds') |>
+  filter(periodo == '1982-2022') |> 
+  distinct(estacion,shac,codigo,nombre,lon,lat)
+
+estaciones <- c('Verano','Otoño','Invierno','Primavera')
+
+for (x in seq_along(estaciones)) {
+  
+  data_pozo_estacion <- data_pozo |> 
+    filter(estacion == estaciones[x])
+  
+  write_csv(data_pozo_estacion,glue::glue('data/processed/csv/pozos_seleccionados_{tolower(estaciones[x])}.csv'))
+  
+}
