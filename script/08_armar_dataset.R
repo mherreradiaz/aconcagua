@@ -22,10 +22,37 @@ data_indices <- read_rds('data/processed/rds/indices_satelitales.rds') |>
   reframe(value = mean(value,na.rm=T)) |> 
   pivot_wider(names_from ='index',values_from = 'value')
 
+data_ndvi <- read_rds('data/processed/rds/ndvi.rds') |> 
+  group_by(across(año:value)) |> 
+  reframe(estacion = estaciones) |> 
+  mutate(estacion = factor(estacion,levels = estaciones)) |> 
+  pivot_wider(names_from ='index',values_from = 'value') |> 
+  select(-codigo)
+
 data <- data_sequia |> 
   left_join(data_indices) |> 
+  left_join(data_ndvi) |> 
   filter(periodo == '1982-2022',
          año >= 2000) |> 
-  select(-periodo)
+  select(año:cob,ncGWDI,SWEI,zcNDVI,everything(),-periodo) |> 
+  arrange(shac,cob,año,estacion) |> 
+  group_by(shac,cob) |> 
+  mutate(`ncGWDI-1` = lag(ncGWDI,1),
+         `ncGWDI-2` = lag(ncGWDI,2),
+         `ncGWDI-3` = lag(ncGWDI,3),
+         `ncGWDI-4` = lag(ncGWDI,4),,
+         `ncGWDI+1` = lead(ncGWDI,1),
+         `ncGWDI+2` = lead(ncGWDI,2),
+         `ncGWDI+3` = lead(ncGWDI,3),
+         `ncGWDI+4` = lead(ncGWDI,4),
+         .before = SWEI) |> 
+  mutate(`SWEI-1` = lag(SWEI,1),
+         `SWEI-2` = lag(SWEI,2),
+         `SWEI-3` = lag(SWEI,3),
+         `SWEI-4` = lag(SWEI,4),
+         .before = zcNDVI) |> 
+  mutate(`zcNDVI+1` = lead(zcNDVI,4),
+         .before = `EDDI-1`) |> 
+  ungroup()
 
 write_rds(data,'data/processed/rds/dataset.rds')
