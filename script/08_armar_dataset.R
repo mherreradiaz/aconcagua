@@ -37,21 +37,21 @@ data <- data_sequia |>
   select(año:cob,ncGWDI,SWEI,zcNDVI,everything(),-periodo) |> 
   arrange(shac,cob,año,estacion) |> 
   group_by(shac,cob) |> 
-  mutate(`ncGWDI-1` = lag(ncGWDI,1),
-         `ncGWDI-2` = lag(ncGWDI,2),
-         `ncGWDI-3` = lag(ncGWDI,3),
-         `ncGWDI-4` = lag(ncGWDI,4),,
-         `ncGWDI+1` = lead(ncGWDI,1),
-         `ncGWDI+2` = lead(ncGWDI,2),
-         `ncGWDI+3` = lead(ncGWDI,3),
-         `ncGWDI+4` = lead(ncGWDI,4),
+  mutate(`ncGWDI_lag_1` = lag(ncGWDI,1),
+         `ncGWDI_lag_2` = lag(ncGWDI,2),
+         `ncGWDI_lag_3` = lag(ncGWDI,3),
+         `ncGWDI_lag_4` = lag(ncGWDI,4),,
+         `ncGWDI_lead_1` = lead(ncGWDI,1),
+         `ncGWDI_lead_2` = lead(ncGWDI,2),
+         `ncGWDI_lead_3` = lead(ncGWDI,3),
+         `ncGWDI_lead_4` = lead(ncGWDI,4),
          .before = SWEI) |> 
-  mutate(`SWEI-1` = lag(SWEI,1),
-         `SWEI-2` = lag(SWEI,2),
-         `SWEI-3` = lag(SWEI,3),
-         `SWEI-4` = lag(SWEI,4),
+  mutate(`SWEI_lag_1` = lag(SWEI,1),
+         `SWEI_lag_2` = lag(SWEI,2),
+         `SWEI_lag_3` = lag(SWEI,3),
+         `SWEI_lag_4` = lag(SWEI,4),
          .before = zcNDVI) |> 
-  mutate(`zcNDVI+1` = lead(zcNDVI,4),
+  mutate(`zcNDVI_lead_1` = lead(zcNDVI,4),
          .before = `EDDI-1`) |> 
   ungroup()
 

@@ -2,6 +2,7 @@ source('script/00_setup.R')
 library(viridis)
 library(ggcorrplot)
 library(patchwork)
+library(RColorBrewer)
 
 # matriz de correlación entre indicadores
 
@@ -115,14 +116,16 @@ for (x in seq_along(estaciones)) {
            cob = as.factor(cob)) |> 
     ggplot(aes(shac,indicator,fill=cor)) +
     geom_tile() +
-    geom_text(aes(label = round(cor, 2)), color = "white", size = 3) +
-    scale_fill_viridis(option = "viridis", name = "r", 
-                       limits = c(-1, 1), breaks = seq(-1, 1, by = 0.5)) +
+    geom_text(aes(label = round(cor, 2)), color = "black", size = 3) +
+    scale_fill_gradientn(colors = brewer.pal(11, "RdBu"),
+                         limits = c(-1, 1),
+                         breaks = seq(-1, 1, by = 0.5),
+                         name = "r") +
     facet_grid(~cob) +
     theme_bw() +
     theme(strip.background = element_rect(fill = 'white')) +
     labs(y = 'Indicador',
-         x = 'Tipo de cobertura')
+         x = 'shac')
   
   ggsave(glue::glue('output/fig/analisis/correlacion_ncGWDI/cor_{estaciones[x]}.png'), 
          width = 14, height = 8)
@@ -159,9 +162,11 @@ for (x in seq_along(estaciones)) {
            cob = as.factor(cob)) |> 
     ggplot(aes(shac,indicator,fill=cor)) +
     geom_tile() +
-    geom_text(aes(label = round(cor, 2)), color = "white", size = 3) +
-    scale_fill_viridis(option = "viridis", name = "r", 
-                       limits = c(-1, 1), breaks = seq(-1, 1, by = 0.5)) +
+    geom_text(aes(label = round(cor, 2)), color = "black", size = 3) +
+    scale_fill_gradientn(colors = brewer.pal(11, "RdBu"),
+                         limits = c(-1, 1),
+                         breaks = seq(-1, 1, by = 0.5),
+                         name = "r") +
     facet_grid(~cob) +
     theme_bw() +
     theme(strip.background = element_rect(fill = 'white')) +

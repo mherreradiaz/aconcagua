@@ -10,7 +10,7 @@ cob <- rast('data/processed/raster/cobertura/COB.tif') |>
 swei <- read_xlsx('data/raw/tabulada/Aconcagua Alto_swei_1981-01-01-2024-04-01.xlsx')
 fechas <- as.Date(swei$fecha)
 
-r_files <- list.files('data/raw/raster/indices/',full.names=T)
+r_files <- list.files('data/raw/raster/indices/',full.names=T)[-19]
 
 lista <- lapply(r_files,function(x) {
   r <- rast(x)
@@ -67,8 +67,8 @@ for (i in seq_along(index_unique)) {
       theme_bw() +
       theme(strip.background = element_rect(fill='white'),
             legend.position = 'none') +
-      scale_fill_manual(values = c('+' = 'firebrick2','-' = 'dodgerblue3')) +
-      scale_color_manual(values = c('+' = 'firebrick2','-' = 'dodgerblue3'))
+      scale_fill_manual(values = c('-' = 'firebrick2','+' = 'dodgerblue3')) +
+      scale_color_manual(values = c('-' = 'firebrick2','+' = 'dodgerblue3'))
     
     ggsave(glue::glue('output/fig/index/ts/{cob_unique[x]}/{index_unique[i]}.png'), width = 14, height = 8)
     

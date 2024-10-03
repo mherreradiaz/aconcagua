@@ -45,8 +45,8 @@ for (x in seq_along(cob_unique)) {
     theme_bw() +
     theme(strip.background = element_rect(fill='white'),
           legend.position = 'none') +
-    scale_fill_manual(values = c('+' = 'firebrick2','-' = 'dodgerblue3')) +
-    scale_color_manual(values = c('+' = 'firebrick2','-' = 'dodgerblue3'))
+    scale_fill_manual(values = c('-' = 'firebrick2','+' = 'dodgerblue3')) +
+    scale_color_manual(values = c('-' = 'firebrick2','+' = 'dodgerblue3'))
   
   ggsave(glue::glue('output/fig/index/ts/{cob_unique[x]}/zcNDVI.png'), width = 14, height = 8)
   
