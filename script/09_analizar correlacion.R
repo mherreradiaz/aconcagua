@@ -84,13 +84,12 @@ for (i in seq_along(shacs)) {
   
 }
 
-
 # correlacion ncGWDI
 
 data <- read_rds('data/processed/rds/dataset.rds')
 
 data_cor <- data |> 
-  select(año:cob,ncGWDI,SWEI,everything()) |> 
+  select(año:cob,ncGWDI,everything(),-contains('ncGWDI-'),-contains('ncGWDI+')) |> 
   group_by(estacion, shac, cob) |> 
   summarise(across(`SWEI`:`zcSM-6`, ~ cor(.x, ncGWDI, use = "complete.obs"), 
                    .names = "{.col}"), .groups = "drop") |> 
@@ -134,7 +133,7 @@ for (x in seq_along(estaciones)) {
 data <- read_rds('data/processed/rds/dataset.rds')
 
 data_cor <- data |> 
-  select(año:cob,SWEI,ncGWDI,everything()) |> 
+  select(año:cob,SWEI,everything(),-contains('SWEI-'),-contains('ncGWDI-')) |> 
   group_by(estacion, shac, cob) |> 
   summarise(across(`ncGWDI`:`zcSM-6`, ~ cor(.x, SWEI, use = "complete.obs"), 
                    .names = "{.col}"), .groups = "drop") |> 
