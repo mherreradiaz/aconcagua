@@ -38,23 +38,23 @@ data <- read_rds('data/processed/rds/pozo_seleccion.rds')
 
 data_sequia <- data |>
   group_by(periodo,estacion,shac,codigo) |>
-  mutate(di = eddi(m)$EDDI) |> 
+  mutate(ncGWDI = eddi(m)$EDDI) |> 
   ungroup() |> 
-  select(año:m,di,lon,lat)
+  select(año:m,ncGWDI,lon,lat)
 
-write_rds(data_sequia,'data/processed/rds/di_pozo_seleccion.rds')
+write_rds(data_sequia,'data/processed/rds/ncGWDI_pozo_seleccion.rds')
 
 data_sequia_shac <- data_sequia |>
   group_by(año,periodo,estacion,shac) |> 
-  reframe(di_mean = mean(di,na.rm=T),
-          di_sd = sd(di,na.rm=T))
+  reframe(ncGWDI_mean = mean(ncGWDI,na.rm=T),
+          ncGWDI_sd = sd(ncGWDI,na.rm=T))
 
-write_rds(data_sequia_shac,'data/processed/rds/di_shac_seleccion.rds')
+write_rds(data_sequia_shac,'data/processed/rds/ncGWDI_shac_seleccion.rds')
 
 # graficar
 
-data_sequia <- read_rds('data/processed/rds/di_pozo_seleccion.rds')
-data_sequia_shac <- read_rds('data/processed/rds/di_shac_seleccion.rds')
+data_sequia <- read_rds('data/processed/rds/ncGWDI_pozo_seleccion.rds')
+data_sequia_shac <- read_rds('data/processed/rds/ncGWDI_shac_seleccion.rds')
 
 periodos <- data$periodo |> unique()
 estaciones <- data$estacion |> unique()
@@ -66,25 +66,27 @@ for (i in seq_along(periodos)) {
       filter(periodo == periodos[[i]],
              estacion == estaciones[[x]],
              año >= 2000) |> 
-      ggplot(aes(año,di,color = as.factor(nombre))) +
+      ggplot(aes(año,ncGWDI,color = as.factor(nombre))) +
       geom_point(alpha=.5) + 
       geom_line(alpha=.5) +
       geom_point(data=data_sequia_shac |> filter(periodo == periodos[[i]],
                                                  estacion == estaciones[[x]],
                                                  año >= 2000),
-                 aes(año,di_mean,color='MEAN'),color='black') +
+                 aes(año,ncGWDI_mean,color='MEAN'),color='black') +
       geom_line(data=data_sequia_shac |> filter(periodo == periodos[[i]],
                                                 estacion == estaciones[[x]],
                                                 año >= 2000),
-                aes(año,di_mean,color='MEAN'),color='black') +
+                aes(año,ncGWDI_mean,color='MEAN'),color='black') +
       facet_wrap(~shac,scales = 'free_x') +
       theme_bw() +
       theme(legend.position = "none",
             strip.background = element_rect(fill = 'white')) +
-      labs(title = glue::glue('Índice de sequía (DI) en {estaciones[[x]]} periodo {periodos[[i]]}'),
-           y = 'DI', x = NULL)
+      labs(title = glue::glue('Índice de sequía (ncGWDI) en {estaciones[[x]]} periodo {periodos[[i]]}'),
+           y = 'ncGWDI', x = NULL)
 
-    ggsave(glue::glue('output/fig/di/{periodos[[i]]}_{estaciones[[x]]}.png'), width = 12, height = 8)
+    ggsave(glue::glue('output/fig/ncGWDI/{periodos[[i]]}_{estaciones[[x]]}.png'), width = 12, height = 8)
     
   }
 }
+
+read_rds('data/processed/rds/di_x_pozo.rds')

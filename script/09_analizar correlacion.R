@@ -8,15 +8,15 @@ library(patchwork)
 data <- read_rds('data/processed/rds/dataset.rds')
 
 indicadores <- data |>
-  select(año:cob,DI,SWEI,everything()) |> 
-  pivot_longer(cols=DI:`zcSM-6`,names_to='indicator',values_to='value') |> 
+  select(año:cob,ncGWDI,SWEI,everything()) |> 
+  pivot_longer(cols=ncGWDI:`zcSM-6`,names_to='indicator',values_to='value') |> 
   pull(indicator) |> 
   unique() |> 
   rev()
 
 data <- data |> 
-  select(año:cob,DI,SWEI,everything()) |> 
-  pivot_longer(cols=DI:`zcSM-6`,names_to='indicator',values_to='value') |>
+  select(año:cob,ncGWDI,SWEI,everything()) |> 
+  pivot_longer(cols=ncGWDI:`zcSM-6`,names_to='indicator',values_to='value') |>
   mutate(indicator = factor(indicator,levels = indicadores)) |> 
   arrange(año,estacion,shac,cob,indicator) |> 
   pivot_wider(names_from = 'indicator',values_from = 'value')
@@ -85,22 +85,22 @@ for (i in seq_along(shacs)) {
 }
 
 
-# correlacion DI
+# correlacion ncGWDI
 
 data <- read_rds('data/processed/rds/dataset.rds')
 
 data_cor <- data |> 
-  select(año:cob,DI,SWEI,everything()) |> 
+  select(año:cob,ncGWDI,SWEI,everything()) |> 
   group_by(estacion, shac, cob) |> 
-  summarise(across(`SWEI`:`zcSM-6`, ~ cor(.x, DI, use = "complete.obs"), 
+  summarise(across(`SWEI`:`zcSM-6`, ~ cor(.x, ncGWDI, use = "complete.obs"), 
                    .names = "{.col}"), .groups = "drop") |> 
   pivot_longer(cols=`SWEI`:`zcSM-6`,names_to='indicator',values_to='cor')
 
-write_rds(data_cor,'data/processed/rds/correlacion_di.rds')
+write_rds(data_cor,'data/processed/rds/correlacion_ncGWDI.rds')
 
-# graficar correlacion DI
+# graficar correlacion ncGWDI
 
-data_cor <- read_rds('data/processed/rds/correlacion_di.rds')
+data_cor <- read_rds('data/processed/rds/correlacion_ncGWDI.rds')
 
 indicadores <- rev(unique(data_cor$indicator))
 
@@ -125,7 +125,7 @@ for (x in seq_along(estaciones)) {
     labs(y = 'Indicador',
          x = 'Tipo de cobertura')
   
-  ggsave(glue::glue('output/fig/analisis/correlacion_di/cor_{estaciones[x]}.png'), 
+  ggsave(glue::glue('output/fig/analisis/correlacion_ncGWDI/cor_{estaciones[x]}.png'), 
          width = 14, height = 8)
 }
 
@@ -134,17 +134,17 @@ for (x in seq_along(estaciones)) {
 data <- read_rds('data/processed/rds/dataset.rds')
 
 data_cor <- data |> 
-  select(año:cob,SWEI,DI,everything()) |> 
+  select(año:cob,SWEI,ncGWDI,everything()) |> 
   group_by(estacion, shac, cob) |> 
-  summarise(across(`DI`:`zcSM-6`, ~ cor(.x, SWEI, use = "complete.obs"), 
+  summarise(across(`ncGWDI`:`zcSM-6`, ~ cor(.x, SWEI, use = "complete.obs"), 
                    .names = "{.col}"), .groups = "drop") |> 
-  pivot_longer(cols=`DI`:`zcSM-6`,names_to='indicator',values_to='cor')
+  pivot_longer(cols=`ncGWDI`:`zcSM-6`,names_to='indicator',values_to='cor')
 
-write_rds(data_cor,'data/processed/rds/correlacion_swei.rds')
+write_rds(data_cor,'data/processed/rds/correlacion_SWEI.rds')
 
 # graficar correlacion SWEI
 
-data_cor <- read_rds('data/processed/rds/correlacion_swei.rds')
+data_cor <- read_rds('data/processed/rds/correlacion_SWEI.rds')
 
 indicadores <- rev(unique(data_cor$indicator))
 
@@ -169,6 +169,6 @@ for (x in seq_along(estaciones)) {
     labs(y = 'Indicador',
          x = 'Tipo de cobertura')
   
-  ggsave(glue::glue('output/fig/analisis/correlacion_swei/cor_{estaciones[x]}.png'), 
+  ggsave(glue::glue('output/fig/analisis/correlacion_SWEI/cor_{estaciones[x]}.png'), 
          width = 14, height = 8)
 }

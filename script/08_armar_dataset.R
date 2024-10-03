@@ -1,11 +1,11 @@
 source('script/00_setup.R')
 library(tidyterra)
 
-data_sequia <- read_rds('data/processed/rds/di_shac_seleccion.rds') |> 
+data_sequia <- read_rds('data/processed/rds/ncGWDI_shac_seleccion.rds') |> 
   group_by(across(everything())) |> 
   reframe(cob = c('AG','NV')) |> 
-  select(año,periodo,estacion,shac,cob,di_mean) |> 
-  rename(DI = di_mean)
+  select(año,periodo,estacion,shac,cob,ncGWDI_mean) |> 
+  rename(ncGWDI = ncGWDI_mean)
 
 estaciones <- c('Verano','Otoño','Invierno','Primavera')
 
