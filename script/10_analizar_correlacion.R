@@ -3,6 +3,7 @@ library(viridis)
 library(ggcorrplot)
 library(patchwork)
 library(RColorBrewer)
+library(Hmisc)
 
 # matriz de correlación entre indicadores por estacion
 
@@ -102,7 +103,7 @@ for (x in seq_along(shacs)) {
   data_cor <- data_shac |>
     filter(estacion == estaciones[i]) |>
     select(-(año:cob)) |> 
-    cor(use = 'pairwise.complete.obs') |> 
+    cor(use = 'pairwise.complete.obs') |>
     as.data.frame() |> 
     select(-matches('ncGWDI_|SWEI_|zcNDVI_')) |> 
     rownames_to_column(var = "indicator_x") |> 
@@ -114,6 +115,24 @@ for (x in seq_along(shacs)) {
                                                      grepl('ncGWDI_lead',indicator_x)),NA,cor),
            cor = ifelse(cor == 1,NA,cor))
   
+  data_pcor <- data_shac |> 
+    filter(estacion == estaciones[i]) |>
+    select(-(año:cob)) |>
+    na.omit() |> 
+    as.matrix() |> 
+    rcorr() |>
+    pluck("P") |> 
+    as.data.frame() |> 
+    select(-matches('ncGWDI_|SWEI_|zcNDVI_')) |> 
+    rownames_to_column(var = "indicator_x") |> 
+    pivot_longer(cols = ncGWDI:`zcSM-36`,names_to = 'indicator_y',values_to = 'p_value') |> 
+    mutate(p_value = ifelse(indicator_y == 'ncGWDI' & grepl('ncGWDI',indicator_x),NA,p_value),
+           p_value = ifelse(indicator_y == 'SWEI' & (grepl('SWEI',indicator_x) |
+                                                   grepl('ncGWDI_lag',indicator_x)),NA,p_value),
+           p_value = ifelse(indicator_y == 'zcNDVI' & (grepl('zcNDVI',indicator_x) |
+                                                     grepl('ncGWDI_lead',indicator_x)),NA,p_value),
+           p_value = ifelse(p_value == 1,NA,p_value))
+  
   indicadores_x <- data_cor |> 
     pull(indicator_x) |> 
     unique()
@@ -122,7 +141,7 @@ for (x in seq_along(shacs)) {
     pull(indicator_y) |> 
     unique()
   
-  plot_estacion[[i]] <- data_cor |> 
+  data_cor |> 
     mutate(indicator_x = factor(indicator_x,levels = indicadores_x),
            indicator_y = factor(indicator_y,levels = rev(indicadores_y))) |> 
     ggplot(aes(indicator_x, indicator_y, fill = cor)) +
@@ -137,9 +156,31 @@ for (x in seq_along(shacs)) {
     theme_bw() +
     theme(axis.text.x = element_text(angle = 45, hjust = 1),
           aspect.ratio = .32,
-          legend.position = 'none')
+          legend.position = 'none',
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank())
   
-  ggsave(glue::glue('output/fig/analisis/correlacion_general/general/cor_shac_{shacs[x]}.png'),
+  ggsave(glue::glue('output/fig/analisis/correlacion_general/general/shac_{shacs[x]}_cor.png'),
+         width = 12, height = 8)
+  
+  data_pcor |> 
+    mutate(indicator_x = factor(indicator_x,levels = indicadores_x),
+           indicator_y = factor(indicator_y,levels = rev(indicadores_y)),
+           p_category = ifelse(p_value > 0.05, "above", "below"),) |>
+    ggplot(aes(indicator_x, indicator_y, fill = p_category)) +
+    geom_tile(color = 'grey80') + 
+    geom_text(aes(label = round(p_value, 2)), color = "black", size = 3) +
+    scale_fill_manual(values = c("below" = "floralwhite", "above" = "firebrick3"),
+                      name = "p-value", na.value = 'transparent') +
+    labs(x = NULL, y = NULL) +
+    theme_bw() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1),
+          aspect.ratio = .32,
+          legend.position = 'none',
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank())
+  
+  ggsave(glue::glue('output/fig/analisis/correlacion_general/general/shac_{shacs[x]}_pvalue.png'),
          width = 12, height = 8)
   
 }
