@@ -46,7 +46,7 @@ ggcorrplot(method = "square",
 
 vif_promedio <- function(data, var) {
   data_select <- data |> 
-    select(-matches('EDDI-|SPEI-|SPI-|zcSM-'), all_of(variables_incluidas))
+    select(-matches('EDDI-|SPEI-|SPI-|zcSM-'), all_of(var))
   modelo <- lm(ncGWDI ~ ., data = data_select) 
   vif_valores <- vif(modelo)
   mean(as.numeric(vif_valores))
@@ -60,7 +60,7 @@ combinaciones <- list(EDDI = c("EDDI-12", "EDDI-24", "EDDI-36"),
 
 mejor_combinacion <- combinaciones |> 
   rowwise() |> 
-  mutate(vif_promedio = calcular_vif_promedio(data, c(EDDI, SPEI, SPI, zcSM))) |> 
+  mutate(vif_promedio = vif_promedio(data, c(EDDI, SPEI, SPI, zcSM))) |> 
   ungroup() |> 
   filter(vif_promedio == min(vif_promedio)) |> 
   pivot_longer(cols=c(EDDI:zcSM), names_to = 'indicador',values_to = 'nombre') |> 
