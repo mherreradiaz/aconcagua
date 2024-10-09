@@ -88,7 +88,9 @@ data_vif |>
   theme_bw() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
-data_cor <- cor(data_ex, use = 'complete.obs')
+data_cor <- data |> 
+  select(-matches('EDDI-|SPEI-|SPI-|zcSM-'), all_of(mejor_combinacion)) |>
+  cor(use = 'pairwise.complete.obs')
 
 data_cor |> 
   ggcorrplot(method = "square", 
@@ -105,7 +107,7 @@ data_cor |>
 
 # guardar dataset filtrado
 
-data_filtrada <- data |> 
+data_filtrada <- read_rds('data/processed/rds/dataset.rds') |> 
   select(-matches('EDDI-|SPEI-|SPI-|zcSM-'),all_of(mejor_combinacion),-`SPEI-24`)
 
 write_rds(data_filtrada,'data/processed/rds/dataset_limpio.rds')

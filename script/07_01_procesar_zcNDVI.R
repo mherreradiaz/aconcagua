@@ -4,13 +4,15 @@ library(ggh4x)
 library(ggforce)
 
 ndvi <- rast(list.files('data/raw/raster/indices/',full.names=T)[19])
+cob <- rast('data/processed/raster/cobertura/COB.tif') |> 
+  as.polygons()
 
 extract <- extract(ndvi,cob,fun=function(x){mean(x,na.rm=T)}) |>
   mutate(cob = cob |> pull(shac),
          .before = ID) |> 
   select(-ID)
 
-names(extract)[2:ncol(extract)] <- 2002:2022
+names(extract)[2:ncol(extract)] <- 2001:2021
 
 data <- extract |>
   pivot_longer(cols=2:ncol(extract),names_to = 'año',values_to = 'zcNDVI') |> 
