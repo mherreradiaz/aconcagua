@@ -4,15 +4,26 @@ library(tmap)
 library(tmaptools)
 library(leaflet)
 library(RColorBrewer)
+library(tools)
 
-grupos <- list(c('ncGWDI','zcNDVI'),
-               c('ncGWDI','zcNDVI_lead'),
-               c('SWEI','zcNDVI'),
-               c('SWEI','zcNDVI_lead'),
-               c('ncGWDI','SWEI_lag_1'),
-               c('ncGWDI','SWEI_lag_2'),
-               c('ncGWDI','SWEI_lag_3'),
-               c('ncGWDI','SWEI_lag_4'))
+# grupos <- list(c('ncGWDI','zcNDVI'),
+#                c('ncGWDI','zcNDVI_lead'),
+#                c('SWEI','zcNDVI'),
+#                c('SWEI','zcNDVI_lead'),
+#                c('ncGWDI','SWEI_lag_1'),
+#                c('ncGWDI','SWEI_lag_2'),
+#                c('ncGWDI','SWEI_lag_3'),
+#                c('ncGWDI','SWEI_lag_4'))
+
+grupos <- list(c('EDDI-12','zcNDVI'),
+               c('EDDI-12','zcNDVI_lead'),
+               c('SPI-12','zcNDVI'),
+               c('SPI-12','zcNDVI_lead'),
+               c('zcSM-36','zcNDVI'),
+               c('zcSM-36','zcNDVI_lead'),
+               c('ncGWDI','EDDI-12'),
+               c('ncGWDI','SPI-12'),
+               c('ncGWDI','zcSM-12'))
 
 r_files <- list.files('data/processed/raster/indices/',full.names=T)
 
