@@ -4,11 +4,11 @@ library(ggh4x)
 library(ggforce)
 
 ndvi <- rast(list.files('data/raw/raster/indices/',full.names=T)[19])
-cob <- rast('data/processed/raster/cobertura/COB.tif') |> 
+cob <- rast('data/processed/raster/cobertura/cobertura.tif') |> 
   as.polygons()
 
 extract <- extract(ndvi,cob,fun=function(x){mean(x,na.rm=T)}) |>
-  mutate(cob = cob |> pull(shac),
+  mutate(cob = cob |> pull(id),
          .before = ID) |> 
   select(-ID)
 

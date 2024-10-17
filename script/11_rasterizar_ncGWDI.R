@@ -1,6 +1,6 @@
 source('script/00_setup.R')
 
-cob <- rast('data/processed/raster/cobertura/COB.tif')
+cob <- rast('data/processed/raster/cobertura/cobertura.tif')
 
 data <- read_rds('data/processed/rds/dataset_limpio.rds') |> 
   mutate(codigo = as.numeric(paste0(ifelse(cob == 'AG',1,2),shac)),
@@ -10,6 +10,8 @@ data <- read_rds('data/processed/rds/dataset_limpio.rds') |>
 nombres <- data |> select(contains('ncGWDI')) |> names()
 
 for (i in seq_along(nombres)) {
+  
+  print(nombres[i])
   
   data_var <- data |> 
     select(año:codigo,all_of(nombres[i]))

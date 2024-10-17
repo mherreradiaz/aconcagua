@@ -16,24 +16,26 @@ cob_2 <- ifel(cob_r == 2,1,NA) |>
 cob_1_80 <- ifel(cob_1 >= .8,1,NA)
 cob_2_80 <- ifel(cob_2 >= .8,2,NA)
 
-cob <- app(c(cob_1_80,cob_2_80),sum,na.rm=T) |>
-  project('EPSG:4326')
+cob <- app(c(cob_1_80,cob_2_80),sum,na.rm=T)
 
 writeRaster(cob,'data/processed/raster/cobertura/tipo_vegetacional.tif',
             overwrite=T)
 
 # cobertura
 
+cob <- rast('data/processed/raster/cobertura/tipo_vegetacional.tif')
+
 veg <- rast('data/processed/raster/cobertura/tipo_vegetacional.tif')*1000
 
 shac <- vect('data/raw/vectorial/SHAC_Aconcagua.shp') |>
   select(shac = OBJECTID) |>
-  project('EPSG:4326') |>
   rasterize(cob,field = 'shac',fun =max)
 
 cob <- app(c(veg,shac),fun = sum,na.rm=T) |>
   mask(veg) |>
   mask(shac)
+
+names(cob) <- 'id'
 
 writeRaster(cob,'data/processed/raster/cobertura/cobertura.tif',
             overwrite=T)

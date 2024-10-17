@@ -6,16 +6,15 @@ library(leaflet)
 library(RColorBrewer)
 library(tools)
 
-# grupos <- list(c('ncGWDI','zcNDVI'),
-#                c('ncGWDI','zcNDVI_lead'),
-#                c('SWEI','zcNDVI'),
-#                c('SWEI','zcNDVI_lead'),
-#                c('ncGWDI','SWEI_lag_1'),
-#                c('ncGWDI','SWEI_lag_2'),
-#                c('ncGWDI','SWEI_lag_3'),
-#                c('ncGWDI','SWEI_lag_4'))
-
-grupos <- list(c('EDDI-12','zcNDVI'),
+grupos <- list(c('ncGWDI','zcNDVI'),
+               c('ncGWDI','zcNDVI_lead'),
+               c('SWEI','zcNDVI'),
+               c('SWEI','zcNDVI_lead'),
+               c('ncGWDI','SWEI_lag_1'),
+               c('ncGWDI','SWEI_lag_2'),
+               c('ncGWDI','SWEI_lag_3'),
+               c('ncGWDI','SWEI_lag_4'),
+               c('EDDI-12','zcNDVI'),
                c('EDDI-12','zcNDVI_lead'),
                c('SPI-12','zcNDVI'),
                c('SPI-12','zcNDVI_lead'),
@@ -29,10 +28,13 @@ r_files <- list.files('data/processed/raster/indices/',full.names=T)
 
 for (i in seq_along(grupos)) {
   
+  nombre <- paste0(grupos[[i]][1],'_x_',grupos[[i]][2])
+  print(nombre)
+  
   r1 <- rast(grep(paste0(grupos[[i]][1],'.tif'),r_files,value=T))
   r2 <- rast(grep(paste0(grupos[[i]][2],'.tif'),r_files,value=T))
   
-  cor_r <- app(c(r1, r2), fun = function(x) {
+  cor_r <- app(c(r1, r2), cores = 15, fun = function(x) {
     serie1 <- x[1:23]
     serie2 <- x[24:46]
     
@@ -50,11 +52,7 @@ for (i in seq_along(grupos)) {
   
   names(cor_r) <- c('r','p_value')
   
-  filename <- paste0(file_path_sans_ext(basename(sources(r1))),
-                      '_x_',
-                      file_path_sans_ext(basename(sources(r2))))
-  
-  writeRaster(cor_r,glue::glue('data/processed/raster/correlacion/{filename}.tif'),
+  writeRaster(cor_r,glue::glue('data/processed/raster/correlacion/{nombre}.tif'),
               overwrite=T)
   
   gc()

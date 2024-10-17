@@ -1,9 +1,10 @@
 source('script/00_setup.R')
 library(tidyterra)
+library(tools)
 
 # SWEI
 
-cob <- rast('data/processed/raster/cobertura/COB.tif')
+cob <- rast('data/processed/raster/cobertura/cobertura.tif')
 
 data <- read_rds('data/processed/rds/dataset_limpio.rds') |> 
   mutate(codigo = as.numeric(paste0(ifelse(cob == 'AG',1,2),shac)),
@@ -34,9 +35,7 @@ for (i in seq_along(nombres)) {
   
   r_stack <- project(r_stack,cob) 
   
-  output_path <- glue::glue('data/processed/raster/indices/{nombres[i]}.tif')
-  dir.create(dirname(output_path), recursive = TRUE, showWarnings = FALSE)
-  writeRaster(r_stack, output_path, overwrite = TRUE)
+  writeRaster(r_stack,'data/processed/raster/indices/{nombres[i]}.tif', overwrite = TRUE)
   gc()
   
 }
@@ -82,13 +81,17 @@ meses <- 9:11
 
 nombres <- file_path_sans_ext(basename(r_files))
 
-for (i in seq_along(nombres)) {
+for (i in 21:length(nombres)) {
+  
+  gc()
+  
+  print(nombres[i])
   
   r_index <- rast(r_files[i])
   
   r <- lapply(años,FUN = function(x) {
     r <- app(r_index[[which(year(fechas) == x)[9:11]]],
-             function(x) {mean(x,na.rn=T)},cores=5)
+             function(x) {mean(x,na.rn=T)},cores=10)
     varnames(r) <- file_path_sans_ext(basename(sources(r_index)))
     names(r) <- x
     r
@@ -96,10 +99,9 @@ for (i in seq_along(nombres)) {
     rast()
   
   r <- project(r,cob)
-  r <- mask(r,cob)
+  r <- terra::mask(r,cob)
   
   writeRaster(r,glue::glue('data/processed/raster/indices/{nombres[i]}.tif'),
               overwrite=T)
   
 }
-    

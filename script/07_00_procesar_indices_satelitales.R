@@ -1,10 +1,11 @@
 source('script/00_setup.R')
 library(tidyterra)
 library(ggh4x)
+library(ggforce)
 
 # indices
 
-cob <- rast('data/processed/raster/cobertura/COB.tif') |> 
+cob <- rast('data/processed/raster/cobertura/cobertura.tif') |> 
   as.polygons()
 
 swei <- read_xlsx('data/raw/tabulada/Aconcagua Alto_swei_1981-01-01-2024-04-01.xlsx')
@@ -16,7 +17,7 @@ lista <- lapply(r_files,function(x) {
   r <- rast(x)
   nombre <- sub(".*indices/(.*)\\.tif", "\\1",sources(r))
   extract <- extract(r,cob,fun=function(x){mean(x,na.rm=T)}) |>
-    mutate(cob = cob |> pull(shac),
+    mutate(cob = cob |> pull(id),
            .before = ID) |> 
     select(-ID)
   names(extract)[2:ncol(extract)] <- fechas
