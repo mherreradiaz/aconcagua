@@ -64,13 +64,12 @@ for (i in seq_along(grupos)) {
 cor_files <- list.files('data/processed/raster/correlacion/',full.names=T)
 nombres <- gsub('.tif','',list.files('data/processed/raster/correlacion/'))
 
-shac <- vect('data/raw/vectorial/SHAC_Aconcagua.shp') |> 
-  project('EPSG:4326') |> 
-  st_as_sf()
+shac <- vect('data/raw/vectorial/SHAC_Aconcagua.shp')
 
 for (i in seq_along(cor_files)) {
   
   tif <- rast(cor_files[i])
+  tif[[2]] <- ifel(tif[[2]] < .05,1,0)
   
   coef <- tif[[1]]
   p <- ifel(tif[[2]] < .05,1,NA)
@@ -94,5 +93,25 @@ for (i in seq_along(cor_files)) {
   tmap_save(tm, glue::glue('output/html/correlacion/{nombres[i]}.html'))
   
 }
+
+
+
+
+
+ggplot() +
+  geom_spatraster(data = r) +  # Primera capa
+  scale_fill_gradientn(
+    limits = c(-1, 1),
+    colors = rev(brewer.pal(11, "RdBu")),
+    na.value = "transparent"
+  ) +
+  geom_spatvector(data = shac, color = "black", fill = 'transparent',size = 0.5) + 
+  theme_minimal() +
+  theme(
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank()
+  ) +
+  facet_wrap(~lyr)
+
 
 
