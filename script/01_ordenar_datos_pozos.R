@@ -1,8 +1,13 @@
 source('script/00_setup.R')
 
+library(tidyverse)
+library(terra)
+library(readxl)
+
 gw <- read_xlsx('data/raw/tabulada/gw_chile.xlsx') |> 
   filter(Basin == 'RIO ACONCAGUA') |> 
   select(codigo = Code, fecha = Date_String,m = `Depth to water (m)`)
+
 pozos <- vect('data/processed/vectorial/pozos_aconcagua.shp') |> 
   values() |>
   rowwise() |> 
@@ -17,6 +22,10 @@ data <- gw |>
   arrange(shac,codigo,fecha)
 
 write_rds(data,'data/processed/rds/pozo_general.rds')
+
+#
+
+data <- read_rds('data/processed/rds/pozo_general.rds')
 
 estaciones <- c('Verano','Otoño','Invierno','Primavera')
 

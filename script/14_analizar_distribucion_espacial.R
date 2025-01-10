@@ -8,9 +8,6 @@ cor_files <- list.files('data/processed/raster/correlacion/',full.names=T)
 nombres <- sub(".*/([^/]+)\\.tif$", "\\1", cor_files)
 
 
-
-
-
 for (i in seq_along(nombres)) {
   
   cor_r <- rast(cor_files[i])
