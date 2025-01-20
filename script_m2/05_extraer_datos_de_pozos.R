@@ -21,6 +21,9 @@ cob_bn <- classify(cob,matrix(c(2,1),ncol=2),others = NA)
 
 pozos_buffer <- buffer(pozos, width = 1500)
 
+writeVector(pozos_buffer,'data/processed/vectorial/pozos_buffer.shp',
+            overwrite=T)
+
 estacional <- function(x) {
   
   x = as.Date(x)
