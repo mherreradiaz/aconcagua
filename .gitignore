@@ -28,8 +28,6 @@
 .Rproj.user/
 
 # Carpetas
-/data/processed/raster/
-/data/processed/cobertura/
 /data/raw/raster/
 
 # produced vignettes
