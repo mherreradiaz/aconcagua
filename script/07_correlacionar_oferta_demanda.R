@@ -3,7 +3,7 @@ library(car)
 
 data <- read_rds('data/processed/rds/dataset.rds')
 
-indices <- c('EDDI','SETI','SPEI','SPI','SSI','zcNDVI')
+indices <- c('EDDI','SETI','SPEI','SPI','SSI','ZCNDVI')
 
 #VIF por índice (no se hizo)
 
@@ -17,36 +17,45 @@ selected_indices <- lapply(indices,\(index) {
     vif() |> 
     as.data.frame() |> 
     rename(vif = 1) |> 
-    rownames_to_column(var = "index_scale") |> 
+    rownames_to_column(var = 'index_scale') |> 
     mutate(index_scale = gsub('`','',index_scale)) |> 
     arrange(vif)
   
   second_scale <- index_vif |> 
-    reframe(select_scale = ifelse(grepl('-12',first(index_scale)),
+    reframe(select_scale = ifelse(grepl('_12',first(index_scale)),
                                   nth(index_scale, 2),
                                   first(index_scale))) |> 
     pull()
   
   
-  select_scales <- c(paste0(index,'-12'),second_scale)
+  select_scales <- c(paste0(index,'_12'),second_scale)
   
 }) |> unlist()
 
-selected_indices <- lapply(indices,\(index) {paste0(index,c('-12','-36'))}) |> 
+selected_indices <- lapply(indices,\(index) {paste0(index,c('_12','_36'))}) |> 
   unlist()
 
-selected_indices <- gsub('NDVI-36','NDVI-1',selected_indices)
+selected_indices <- gsub('NDVI_36','NDVI_1',selected_indices)
 
 #modelo GWI
 
+data <- read_rds('data/processed/rds/dataset.rds')
+
+hidro_var <- c('SWEI',paste0('SWEI',paste0('_LAG_',1:4)),with(expand.grid(prefix = c('EDDI','SETI','SPEI','SPI','SSI'), suffix = c('_12','_36')),
+                  paste0(prefix, suffix)))
+  
+vi_var <- with(expand.grid(prefix = c('', 'AG_', 'VN_'), suffix = c('ZCNDVI_12', 'ZCNDVI_1','SETI_1','SETI_36')),
+               paste0(prefix, suffix))
+
+selected_indices <- c(hidro_var,vi_var)
+
 data_model <- data |> 
-  mutate(group = as.factor(paste(shac,codigo,cobertura,sep='_')),
+  mutate(group = as.factor(paste(shac,codigo,sep='_')),
          shac = as.factor(shac),
          well = as.factor(codigo),
-         veg_type = as.factor(cobertura),
          season = as.factor(estacion),
-         .before = SWEI) |>
-  select(GWI,group,shac,well,veg_type,season,SWEI:SWEI_lag_4,all_of(selected_indices)) |> 
+         .before = AG_COB) |>
+  select(GWI,group,shac,well,season,contains('COB'),all_of(selected_indices)) |> 
   na.omit()
 
 names(data_model) <- gsub('-','_',names(data_model))
@@ -55,6 +64,7 @@ library(randomForest)
 library(caret)
 library(ranger)
 library(progress)
+library(patchwork)
 
 set.seed(123)
 
@@ -76,7 +86,7 @@ best_model <- NULL
 results <- tibble(mtry = integer(), min.node.size = integer(), sample.fraction = double(), R2 = double(), RMSE = double(), MAE = double())
 
 total_combinations <- length(mtry_values) * length(min_node_values) * length(sample_fractions)
-pb <- progress_bar$new(total = total_combinations, format = "Tuning [:bar] :percent eta: :eta")
+pb <- progress_bar$new(total = total_combinations, format = 'Tuning [:bar] :percent eta: :eta')
 
 for (mtry in mtry_values) {
   for (min_node in min_node_values) {
@@ -88,7 +98,7 @@ for (mtry in mtry_values) {
                          mtry = mtry,
                          min.node.size = min_node,
                          sample.fraction = sf,
-                         importance = "permutation")
+                         importance = 'permutation')
       
       predicciones <- predict(rf_model, test_data)$predictions
       
@@ -116,29 +126,27 @@ print(best_params)
 best_predictions <- predict(best_model, test_data)$predictions
 
 plot_data <- test_data |> 
-  mutate(Predicho = best_predictions,
-         veg_type = ifelse(veg_type == 'AG','AG','NV'))
+  mutate(Predicho = best_predictions)
 
-p1 <- ggplot(plot_data, aes(x = GWI, y = Predicho, color = as.factor(veg_type))) +
-  geom_hline(yintercept = 0, linetype = "dashed",color = 'grey30', alpha = .7) +
-  geom_vline(xintercept = 0, linetype = "dashed",color = 'grey30',alpha = .7) +
-  geom_abline(slope = 1, intercept = 0, linetype = "dashed",color = 'grey30',alpha = .7) +
+p1 <- ggplot(plot_data, aes(x = GWI, y = Predicho)) +
+  geom_hline(yintercept = 0, linetype = 'dashed',color = 'grey30', alpha = .7) +
+  geom_vline(xintercept = 0, linetype = 'dashed',color = 'grey30',alpha = .7) +
+  geom_abline(slope = 1, intercept = 0, linetype = 'dashed',color = 'grey30',alpha = .7) +
   geom_point(alpha = .7) +
-  scale_color_discrete(labels = c("0" = "AG", "1" = "NV")) +
   theme_bw() +
   xlim(-2.2,1.5) +
   ylim(-2.2,1.5) +
-  labs(x = "observed GWI",
-       y = "predicted GWI",
+  labs(x = 'observed GWI',
+       y = 'predicted GWI',
        color = 'vegetation type') +
   coord_fixed(ratio = 1) +
-  annotate("text", x = -2.2, y = 1.32, 
-           label = paste0("R²: ", round(best_params$R2, 3), 
-                          "\nRMSE: ", round(best_params$RMSE, 3), 
-                          "\nMAE: ", round(best_params$MAE, 3)),
+  annotate('text', x = -2.2, y = 1.32, 
+           label = paste0('R²: ', round(best_params$R2, 3), 
+                          '\nRMSE: ', round(best_params$RMSE, 3), 
+                          '\nMAE: ', round(best_params$MAE, 3)),
            hjust = 0, size = 4) +
   theme(legend.position = c(.86, .105),
-        legend.background = element_rect(fill = "white", color = "grey30",
+        legend.background = element_rect(fill = 'white', color = 'grey30',
                                          , size = 0.2),
         legend.text = element_text(size = 8),
         legend.title = element_text(size = 10))
@@ -151,11 +159,11 @@ var_importance <- as.data.frame(best_model$variable.importance)
 var_importance$Variable <- rownames(var_importance)
 
 p2 <- ggplot(var_importance, aes(x = reorder(Variable, best_model$variable.importance), y = best_model$variable.importance)) +
-  geom_col(fill = "steelblue") +
+  geom_col(fill = 'steelblue') +
   coord_flip() +
   theme_bw() +
-  labs(x = "predictors",
-       y = "importance (increase in MSE)")
+  labs(x = 'predictors',
+       y = 'importance (increase in MSE)')
 
 print(p2)
 
@@ -167,20 +175,84 @@ ggsave('output/fig/gwi_model/gwi_model.png',width = 11.78,height=7.42)
 
 #correlación
 
-predictors <- c('SPEI-36','EDDI-36','SPI-36','SSI-36','SPEI-12','SPI-12','EDDI-12')
+compute_correlation <- function(df, predictors) {
+  df |> 
+    group_by(shac, codigo) |> 
+    reframe(across(contains(predictors), 
+                   ~ {
+                     test <- cor.test(GWI, .x, use = 'complete.obs')
+                     r <- test$estimate
+                     p <- test$p.value
+                     sig <- ifelse(p < 0.05, "*", "")
+                     paste0(round(r, 2), sig)
+                   })) |> 
+    pivot_longer(contains(predictors), names_to = 'predictor', values_to = 'label')
+}
 
-data_cor <- read_rds('data/processed/rds/dataset.rds') |> 
-  select(shac,codigo,cobertura,GWI,all_of(predictors)) |> 
-  group_by(shac,codigo,cobertura) |> 
-  reframe(across(all_of(predictors), ~ cor(GWI, .x, use = 'complete.obs'))) |> 
-  pivot_longer(all_of(predictors), names_to = 'predictor',values_to = 'value')
+predictors <- c('SPEI_36','EDDI_36','SPI_36','SSI_36','SPEI_12','SPI_12','EDDI_12')
 
-data_cor |> 
-  ggplot(aes(x = factor(predictor), y = factor(codigo), fill = value)) +
+data_cor1 <- read_rds('data/processed/rds/dataset.rds') |> 
+  select(shac, codigo, GWI, all_of(predictors_1)) |> 
+  compute_correlation(predictors_1)
+
+data_cor1 |> 
+  ggplot(aes(x = factor(predictor), y = factor(codigo), fill = as.numeric(gsub("\\*", "", label)))) +
   geom_tile() + 
-  scale_fill_gradient2(low = "blue", mid = "white", high = "red", midpoint = 0) +
-  facet_grid(rows = vars(shac), cols = vars(cobertura), space = "free_y", scales = "free_y",switch = "y") +
-  labs(x = "Predictor", y = "Codigo", fill = "Correlation") +
+  geom_text(aes(label = label), size = 3) +
+  scale_fill_gradient2(low = 'blue', mid = 'white', high = 'red', midpoint = 0) +
+  facet_grid(rows = vars(shac), space = 'free_y', scales = 'free_y', switch = 'y') +
+  labs(x = 'Predictor', y = 'Codigo', fill = 'Correlation') +
   theme_bw() +
   theme(strip.background = element_rect(fill = 'white'))
+
+data_cor2 <- read_rds('data/processed/rds/dataset.rds') |> 
+  select(shac, codigo, GWI, contains('NDVI')) |> 
+  compute_correlation('NDVI') |> 
+  rowwise() |> 
+  mutate(veg_type = case_when(str_detect(predictor, 'AG') ~ 'AG',
+                              str_detect(predictor, 'VN') ~ 'VN',
+                              .default = 'ALL'))
+
+data_cor2 |> 
+  ggplot(aes(x = factor(predictor), y = factor(codigo), fill = as.numeric(gsub("\\*", "", label)))) +
+  geom_tile() + 
+  geom_text(aes(label = label), size = 3) +
+  scale_fill_gradient2(low = 'blue', mid = 'white', high = 'red', midpoint = 0) +
+  facet_grid(rows = vars(shac), cols = vars(veg_type), space = 'free_y', scales = 'free', switch = 'y') +
+  labs(x = 'Predictor', y = 'Codigo', fill = 'Correlation') +
+  theme_bw() +
+  theme(strip.background = element_rect(fill = 'white'))
+
+data_cor3 <- read_rds('data/processed/rds/dataset.rds') |> 
+  select(shac, codigo, GWI, contains('SETI')) |> 
+  compute_correlation('SETI') |> 
+  rowwise() |> 
+  mutate(veg_type = case_when(str_detect(predictor, 'AG') ~ 'AG',
+                              str_detect(predictor, 'VN') ~ 'VN',
+                              .default = 'ALL'))
+
+data_cor3 |> 
+  ggplot(aes(x = factor(predictor), y = factor(codigo), fill = as.numeric(gsub("\\*", "", label)))) +
+  geom_tile() + 
+  geom_text(aes(label = label), size = 3) +
+  scale_fill_gradient2(low = 'blue', mid = 'white', high = 'red', midpoint = 0) +
+  facet_grid(rows = vars(shac), cols = vars(veg_type), space = 'free_y', scales = 'free', switch = 'y') +
+  labs(x = 'Predictor', y = 'Codigo', fill = 'Correlation') +
+  theme_bw() +
+  theme(strip.background = element_rect(fill = 'white'))
+
+data_cor4 <- read_rds('data/processed/rds/dataset.rds') |> 
+  select(shac, codigo, GWI, contains('COB')) |> 
+  compute_correlation('COB')
+
+data_cor4 |> 
+  ggplot(aes(x = factor(predictor), y = factor(codigo), fill = as.numeric(gsub("\\*", "", label)))) +
+  geom_tile() + 
+  geom_text(aes(label = label), size = 3) +
+  scale_fill_gradient2(low = 'blue', mid = 'white', high = 'red', midpoint = 0) +
+  facet_grid(rows = vars(shac), space = 'free_y', scales = 'free', switch = 'y') +
+  labs(x = 'Predictor', y = 'Codigo', fill = 'Correlation') +
+  theme_bw() +
+  theme(strip.background = element_rect(fill = 'white'))
+
 

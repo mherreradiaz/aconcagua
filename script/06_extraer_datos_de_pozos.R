@@ -24,76 +24,6 @@ estacional <- function(x) {
   return(tibble(año = año, estacion = estacion))
 }
 
-pozos <- vect('data/processed/vectorial/pozo_filtrado.shp')
-
-pb_list <- lapply(1:dim(pozos)[1],\(x) {
-  buffer(pozos[x],1500)
-})
-
-cob <- rast('data/processed/raster/cobertura/tipo_vegetacional.tif')
-
-cob_pol <- cob |> 
-  as.polygons()
-
-tif <- list.files('data/processed/raster/indices',full.names=T)
-
-data_index <- lapply(pb_list,\(pb) {
-  
-  unidad_analisis <- intersect(pb,cob_pol) |> 
-    mutate(cobertura = ifelse(cobertura == 1, 'AG','NV'))
-  
-  values_ua <- lapply(tif,\(x) {
-    r <- rast(x)
-    name_r <- gsub('.tif','',basename(sources(r)))
-    
-    terra::extract(r,unidad_analisis,fun=mean) |> 
-      mutate(shac = unidad_analisis$shac,
-             codigo = unidad_analisis$codigo,
-             cobertura = unidad_analisis$cobertura,
-             .before = -ID) |> 
-      select(-ID) |> 
-      pivot_longer(c(everything(),-c(shac,codigo,cobertura)),values_to = name_r, names_to = 'fecha')
-  }) |> 
-    reduce(full_join) |> 
-    suppressMessages()
-}) |> 
-  bind_rows() |> 
-  separate(fecha, into = c('año','estacion'),sep=' ') |> 
-  mutate(año = as.integer(año),
-         estacion = factor(estacion,levels = c('Verano','Otoño','Invierno','Primavera'))) |> 
-  select(año,estacion,shac,codigo,cobertura,everything())
-
-#gwi
-
-gwi <- read_rds('data/processed/rds/gwi.rds') |> 
-  mutate(año = as.integer(año),
-         codigo = as.integer(codigo)) |> 
-  select(año,estacion,shac,codigo,GWI)
-
-data_index_p1 <- data_index |> 
-  left_join(gwi) |> 
-  select(año,estacion,shac,codigo,cobertura,GWI,everything())
-
-#swei
-
-swei <- read_xlsx('data/raw/tabulada/Aconcagua Alto_swei_1981-01-01-2024-04-01.xlsx') |> 
-  mutate(estacional(fecha),
-         .before = fecha) |> 
-  select(-fecha) |> 
-  group_by(año,estacion) |> 
-  reframe(SWEI = mean(swei,na.rm=T)) |> 
-  mutate(año = as.integer(año),
-         SWEI_lag_1 = lag(SWEI,1),
-         SWEI_lag_2 = lag(SWEI,2),
-         SWEI_lag_3 = lag(SWEI,3),
-         SWEI_lag_4 = lag(SWEI,4))
-
-data_index_p2 <- data_index_p1 |> 
-  left_join(swei) |>
-  select(año,estacion,shac,codigo,cobertura,GWI,names(swei)[-c(1:2)],everything())
-
-write_rds(data_index_p2,'data/processed/rds/dataset.rds')
-
 #### nuevo proceso
 
 pozos <- vect('data/processed/vectorial/pozo_filtrado.shp')
@@ -261,15 +191,16 @@ data_swei <- read_xlsx('data/raw/tabulada/Aconcagua Alto_swei_1981-01-01-2024-04
 data_index <- left_join(data_hidro,data_vi) |> 
   suppressMessages()
 
-data <- data_index |> 
+data <- data_index |>
   mutate(año = as.numeric(str_extract(fecha,'\\d{4}')),
-         estacion = str_extract(fecha,'[A-Za-zñÑáéíóúÁÉÍÓÚ]+')) |> 
+         estacion = factor(str_extract(fecha,'[A-Za-zñÑáéíóúÁÉÍÓÚ]+'),
+                           levels = c('Verano','Otoño','Invierno','Primavera'))) |> 
   left_join(data_cob) |> 
   left_join(data_gwi) |> 
   left_join(data_swei) |> 
-  select(shac,codigo,fecha,GWI,contains('cob'),contains('SWEI'),
-         contains('NDVI'),contains('SETI'),everything(), -año,-estacion)
+  select(shac,codigo,año,estacion,GWI,contains('cob'),contains('SWEI'),
+         contains('NDVI'),contains('SETI'),everything(),-fecha)
 
-names(data) <- c(names(data)[1:3],gsub('-','_',toupper(names(data)))[4:66])
+names(data) <- c(names(data)[1:4],gsub('-','_',toupper(names(data)))[5:67])
 
 write_rds(data,'data/processed/rds/dataset.rds')
