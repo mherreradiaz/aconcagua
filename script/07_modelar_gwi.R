@@ -39,12 +39,12 @@ selected_indices <- gsub('NDVI_36','NDVI_1',selected_indices)
 
 #modelo GWI
 
-data <- read_rds('data/processed/rds/dataset.rds')
+data <- read_rds('data/processed/rds/dataset_3000.rds')
 
-hidro_var <- c('SWEI',paste0('SWEI',paste0('_LAG_',1:4)),with(expand.grid(prefix = c('EDDI','SETI','SPEI','SPI','SSI'), suffix = c('_12','_36')),
+hidro_var <- c('SWEI',paste0('SWEI',paste0('_lag_',1:4)),with(expand.grid(prefix = c('EDDI','SPEI','SPI','SSI'), suffix = c('_12','_36')),
                   paste0(prefix, suffix)))
   
-vi_var <- with(expand.grid(prefix = c('', 'AG_', 'VN_'), suffix = c('ZCNDVI_12', 'ZCNDVI_1','SETI_1','SETI_36')),
+vi_var <- with(expand.grid(prefix = c('zcNDVI_12', 'zcNDVI_1','SETI_1','SETI_36'), suffix = c('_AG', '_VN')),
                paste0(prefix, suffix))
 
 selected_indices <- c(hidro_var,vi_var)
@@ -54,11 +54,9 @@ data_model <- data |>
          shac = as.factor(shac),
          well = as.factor(codigo),
          season = as.factor(estacion),
-         .before = AG_COB) |>
+         .before = COB_AG) |>
   select(GWI,group,shac,well,season,contains('COB'),all_of(selected_indices)) |> 
   na.omit()
-
-names(data_model) <- gsub('-','_',names(data_model))
 
 library(randomForest)
 library(caret)
