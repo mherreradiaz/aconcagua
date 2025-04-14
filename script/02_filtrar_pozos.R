@@ -1,6 +1,7 @@
 library(tidyverse)
 library(viridis)
 library(ggforce)
+
 length.if <- function(vector, condition) {
   if (missing(condition)) {
     stop("Debes especificar una condición.")
