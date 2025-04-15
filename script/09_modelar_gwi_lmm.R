@@ -86,7 +86,7 @@ for (buffer in c(3000,5000,8000)) {
   
   predictors <- setdiff(names(data_model), c("GWI", "well"))
   
-  std_coef <- lapply(unique(data_model_class$class), \(x) {
+  coef_estandarizados <- lapply(unique(data_model_class$class), \(x) {
     
     data_model <- data_model_class |> 
       filter(class == x) |> 
@@ -110,11 +110,13 @@ for (buffer in c(3000,5000,8000)) {
     
   }) |> bind_rows()
   
+  write_rds(coef_estandarizados,glue('data/processed/rds/std_coef_dataset_class{buffer}.rds'))
+  
   facet_labels <- setNames(c('-0.15 < S ≤ -0.1','-0.1 < S ≤ -0.05',
                              '-0.05 < S ≤ 0','0 < S ≤ 0.05'),
                            as.character(1:4))
   
-  std_coef |> 
+  coef_estandarizados |> 
     ggplot(aes(x = Parameter, y = Std_Coefficient, ymin = CI_low, ymax = CI_high, color = as.factor(sign))) +
     geom_pointrange() +
     coord_flip() +
