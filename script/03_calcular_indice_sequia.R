@@ -74,7 +74,7 @@ data |>
   theme(strip.background = element_rect(fill='white')) +
   labs(x = NULL, y = 'GWI')
 
-ggsave('output/fig/series/gwi.png',width = 11.78,height=7.42)
+ggsave('output/fig/series/pozos/gwi.png',width = 11.78,height=7.42)
 
 data |> 
   mutate(fecha = año + case_when(estacion == 'Verano' ~ (.5/12)*1,
@@ -87,7 +87,7 @@ data |>
   theme_bw() +
   labs(x = NULL, y = 'GWI', color = 'tendency groups')
 
-ggsave('output/fig/series/gwi_smooth.png',width = 11.78*.7,height=7.42*.7)
+ggsave('output/fig/series/pozos/gwi_smooth.png',width = 11.78*.7,height=7.42*.7)
 
 ## old
 
